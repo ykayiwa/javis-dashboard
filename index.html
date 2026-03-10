@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Javis Status Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0f0f1a;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 2rem;
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header-meta {
+            display: flex;
+            gap: 2rem;
+            margin-top: 1rem;
+            font-size: 0.9rem;
+            color: #888;
+        }
+
+        .header-meta span {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00d4ff;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .card {
+            background: #1a1a2e;
+            border-radius: 12px;
+            padding: 1.5rem;
+            border: 1px solid #2a2a4a;
+        }
+
+        .card h2 {
+            font-size: 1.1rem;
+            color: #00d4ff;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .card h2::before {
+            content: '';
+            width: 4px;
+            height: 1.1rem;
+            background: #00d4ff;
+            border-radius: 2px;
+        }
+
+        .task-item {
+            background: #252542;
+            border-radius: 8px;
+            padding: 1rem;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #00d4ff;
+        }
+
+        .task-item.in_progress {
+            border-left-color: #00d4ff;
+            animation: glow 2s ease-in-out infinite;
+        }
+
+        .task-item.pending {
+            border-left-color: #f0a500;
+        }
+
+        .task-item.completed {
+            border-left-color: #00ff88;
+        }
+
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 0 5px rgba(0, 212, 255, 0.2); }
+            50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.4); }
+        }
+
+        .task-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.5rem;
+        }
+
+        .task-title {
+            font-weight: 600;
+            color: #fff;
+        }
+
+        .task-badge {
+            font-size: 0.7rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: 600;
+        }
+
+        .badge-high { background: rgba(255, 0, 100, 0.2); color: #ff0064; }
+        .badge-medium { background: rgba(240, 165, 0, 0.2); color: #f0a500; }
+        .badge-low { background: rgba(0, 255, 136, 0.2); color: #00ff88; }
+
+        .task-meta {
+            font-size: 0.85rem;
+            color: #888;
+            display: flex;
+            gap: 1rem;
+        }
+
+        .activity-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #2a2a4a;
+        }
+
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+
+        .activity-time {
+            font-size: 0.75rem;
+            color: #666;
+            margin-bottom: 0.25rem;
+        }
+
+        .activity-action {
+            font-size: 0.9rem;
+            color: #ccc;
+        }
+
+        .activity-project {
+            display: inline-block;
+            font-size: 0.75rem;
+            background: #2a2a4a;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            color: #00d4ff;
+        }
+
+        .activity-result {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        .queue-item {
+            background: #252542;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .queue-item.cron {
+            border-left: 3px solid #7b2cbf;
+        }
+
+        .queue-item.manual {
+            border-left: 3px solid #f0a500;
+        }
+
+        .queue-title {
+            font-size: 0.9rem;
+        }
+
+        .queue-schedule {
+            font-size: 0.75rem;
+            color: #888;
+        }
+
+        .health-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+        }
+
+        .health-item {
+            background: #252542;
+            padding: 0.75rem;
+            border-radius: 8px;
+        }
+
+        .health-label {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+        }
+
+        .health-value {
+            font-size: 0.9rem;
+            color: #fff;
+            margin-top: 0.25rem;
+        }
+
+        .health-value.online {
+            color: #00ff88;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+
+        .stat-box {
+            background: #252542;
+            padding: 1.5rem;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #00d4ff;
+        }
+
+        .stat-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-top: 0.25rem;
+        }
+
+        .projects-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+        }
+
+        .project-tag {
+            background: linear-gradient(135deg, #1a1a3e 0%, #2a2a5e 100%);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid #3a3a6e;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #666;
+        }
+
+        .error {
+            background: rgba(255, 0, 100, 0.1);
+            border: 1px solid #ff0064;
+            padding: 1rem;
+            border-radius: 8px;
+            color: #ff0064;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+            .header-meta {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚡ Javis Status Dashboard</h1>
+        <div class="header-meta">
+            <span><span class="status-indicator"></span> Online</span>
+            <span id="session-duration">Session: --</span>
+            <span id="last-updated">Updated: --</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <div id="loading" class="loading">Loading status...</div>
+        <div id="content" class="grid" style="display: none;">
+            
+            <!-- Active Tasks -->
+            <div class="card">
+                <h2>Active Tasks</h2>
+                <div id="active-tasks"></div>
+            </div>
+
+            <!-- Recent Activity -->
+            <div class="card">
+                <h2>Recent Activity</h2>
+                <div id="recent-activity"></div>
+            </div>
+
+            <!-- Queue -->
+            <div class="card">
+                <h2>Queue & Backlog</h2>
+                <div id="queue"></div>
+            </div>
+
+            <!-- System Health -->
+            <div class="card">
+                <h2>System Health</h2>
+                <div id="system-health" class="health-grid"></div>
+            </div>
+
+            <!-- Stats -->
+            <div class="card">
+                <h2>Today's Stats</h2>
+                <div id="stats" class="stats-grid"></div>
+            </div>
+
+            <!-- Active Projects -->
+            <div class="card">
+                <h2>Active Projects</h2>
+                <div id="projects" class="projects-list"></div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        async function loadStatus() {
+            try {
+                const response = await fetch('./status.json?t=' + Date.now());
+                if (!response.ok) throw new Error('Failed to load');
+                const data = await response.json();
+                
+                renderDashboard(data);
+            } catch (error) {
+                document.getElementById('loading').innerHTML = 
+                    '<div class="error">Error loading status: ' + error.message + '</div>';
+            }
+        }
+
+        function renderDashboard(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('content').style.display = 'grid';
+
+            // Header
+            document.getElementById('session-duration').textContent = 
+                'Session: ' + (data.currentSession?.duration || '--');
+            document.getElementById('last-updated').textContent = 
+                'Updated: ' + new Date(data.lastUpdated).toLocaleTimeString();
+
+            // Active Tasks
+            const tasksContainer = document.getElementById('active-tasks');
+            if (data.activeTasks && data.activeTasks.length > 0) {
+                tasksContainer.innerHTML = data.activeTasks.map(task => `
+                    <div class="task-item ${task.status}">
+                        <div class="task-header">
+                            <span class="task-title">${task.title}</span>
+                            <span class="task-badge badge-${task.priority}">${task.priority}</span>
+                        </div>
+                        <div class="task-meta">
+                            <span>${task.project}</span>
+                            <span>•</span>
+                            <span>${task.status.replace('_', ' ')}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                tasksContainer.innerHTML = '<div style="color: #666;">No active tasks</div>';
+            }
+
+            // Recent Activity
+            const activityContainer = document.getElementById('recent-activity');
+            if (data.recentActivity && data.recentActivity.length > 0) {
+                activityContainer.innerHTML = data.recentActivity.map(activity => `
+                    <div class="activity-item">
+                        <div class="activity-time">${new Date(activity.time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</div>
+                        <div class="activity-action">
+                            <span class="activity-project">${activity.project}</span>
+                            ${activity.action}
+                        </div>
+                        <div class="activity-result">${activity.result}</div>
+                    </div>
+                `).join('');
+            } else {
+                activityContainer.innerHTML = '<div style="color: #666;">No recent activity</div>';
+            }
+
+            // Queue
+            const queueContainer = document.getElementById('queue');
+            if (data.queue && data.queue.length > 0) {
+                queueContainer.innerHTML = data.queue.map(item => `
+                    <div class="queue-item ${item.type}">
+                        <div>
+                            <div class="queue-title">${item.title}</div>
+                            <div class="queue-schedule">${item.schedule} • ${item.project}</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                queueContainer.innerHTML = '<div style="color: #666;">Queue empty</div>';
+            }
+
+            // System Health
+            const healthContainer = document.getElementById('system-health');
+            const health = data.systemHealth || {};
+            healthContainer.innerHTML = `
+                <div class="health-item">
+                    <div class="health-label">OpenClaw</div>
+                    <div class="health-value ${health.openclaw === 'online' ? 'online' : ''}">${health.openclaw || 'unknown'}</div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label">Gateway</div>
+                    <div class="health-value ${health.gateway === 'running' ? 'online' : ''}">${health.gateway || 'unknown'}</div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label">Node</div>
+                    <div class="health-value">${health.node || 'unknown'}</div>
+                </div>
+                <div class="health-item">
+                    <div class="health-label">Version</div>
+                    <div class="health-value">${health.version || 'unknown'}</div>
+                </div>
+            `;
+
+            // Stats
+            const statsContainer = document.getElementById('stats');
+            const stats = data.stats || {};
+            statsContainer.innerHTML = `
+                <div class="stat-box">
+                    <div class="stat-number">${stats.tasksCompletedToday || 0}</div>
+                    <div class="stat-label">Tasks Done</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">${stats.filesModifiedToday || 0}</div>
+                    <div class="stat-label">Files Changed</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">${stats.messagesProcessed || 0}</div>
+                    <div class="stat-label">Messages</div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-number">${(stats.projectsActive || []).length}</div>
+                    <div class="stat-label">Active Projects</div>
+                </div>
+            `;
+
+            // Projects
+            const projectsContainer = document.getElementById('projects');
+            if (stats.projectsActive && stats.projectsActive.length > 0) {
+                projectsContainer.innerHTML = stats.projectsActive.map(project => 
+                    `<span class="project-tag">${project}</span>`
+                ).join('');
+            } else {
+                projectsContainer.innerHTML = '<div style="color: #666;">No active projects</div>';
+            }
+        }
+
+        // Load initially and refresh every 30 seconds
+        loadStatus();
+        setInterval(loadStatus, 30000);
+    </script>
+</body>
+</html>
